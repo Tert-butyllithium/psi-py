@@ -6,6 +6,7 @@ import time
 import multiprocessing
 import argparse
 
+logging = False
 # MP = False
 
 ## Helper functions
@@ -136,20 +137,6 @@ def server_online_phase(ys, privkey, num_processes):
             y_primes.append(y_prime)
     return y_primes
 
-# def client_online_phase(y_primes, Rcs, ts, pubkey, _):
-#     """Client computes Kc:i and t'i to determine intersections."""
-#     t_primes = []
-#     intersections = []
-#     intersection_ids = []
-#     for idx, (y_prime, Rc) in enumerate(zip(y_primes, Rcs)):
-#         Kc_i = div_mod(y_prime, Rc, pubkey.n)
-#         t_prime = second_hash(Kc_i)
-#         t_primes.append(t_prime)
-#         if t_prime in ts:
-#             intersections.append(t_prime)
-#             intersection_ids.append(idx)
-#     return t_primes, intersections, intersection_ids
-
 
 
 def client_online_phase(y_primes, Rcs, ts, pubkey, num_processes):
@@ -278,6 +265,9 @@ def main(args):
 
     # Generate RSA keys
     pubkey, privkey = generate_keys()
+    rsa_finished = time.time()
+    if logging:
+        print(f"RSA key generation time: {rsa_finished - start_time:.6f} seconds")
 
     # Prepare data based on method
     client_set, server_set = prepare_data(args)
@@ -287,24 +277,30 @@ def main(args):
 
     # Calculate total time and print timing information
     total_time = time.time() - start_time
-    print(f"Total time: {total_time:.6f} seconds")
+    if logging:
+        print(f"Total time: {total_time:.6f} seconds")
+    total_time = 0
     for phase, duration in timings.items():
-        print(f"{phase.capitalize()} phase time: {duration:.6f} seconds")
+        if logging:
+            print(f"{phase.capitalize()} phase time: {duration:.6f} seconds")
+        total_time += duration
     
     # Optional: Display intersections
     res = [client_set[idx] for idx in intersection_idxs]
     res = set(res)
-    print("Intersections:", res)
+    if logging:
+        print("Intersections:", res)
 
     if len(intersection_idxs) != args.psi_size:
         # ground_truth = set(client_set).intersection(server_set)
         # print(f"Ground truth [size={len(ground_truth)}]: {ground_truth}")
         raise ValueError("Incorrect intersection size result")
 
-    return res
+    return res, total_time
 
 
 if __name__ == '__main__':
+    logging = True
     parser = argparse.ArgumentParser(description="Generate and manage sets for PSI")
     parser.add_argument('m', type=int, help="Size of the client set")
     parser.add_argument('n', type=int, help="Size of the server set")
