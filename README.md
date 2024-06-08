@@ -1,2 +1,2 @@
 # psi-py
-A simple implementations of PSI (may not correct)
+A simple implementations of PSI
